@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Plans</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      width: 60%;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      background-color: #f9f9f9;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+    li button {
+      background-color: #f44336;
+      color: white;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+    li button:hover {
+      background-color: #e53935;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>My Plans</h1>
+  <input type="text" id="planInput" placeholder="Enter your plan">
+  <button onclick="addPlan()">Add Plan</button>
+
+  <ul id="planList"></ul>
+</div>
+
+<script>
+// Load plans from Flask API when the page is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  loadPlans();
+});
+
+// Add plan function
+function addPlan() {
+  const planInput = document.getElementById('planInput');
+  const planText = planInput.value.trim();
+
+  if (planText) {
+    fetch('http://localhost:5000/plans', {  // Ensure this matches the Flask server's URL
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ text: planText })
+    })
+    .then(response => response.json())
+    .then(() => {
+      planInput.value = ''; // Clear input
+      loadPlans(); // Re-render the list
+    })
+    .catch(error => alert("Error adding plan: " + error));
+  } else {
+    alert("Please enter a plan.");
+  }
+}
+
+// Load plans from Flask API and render the list
+function loadPlans() {
+  fetch('http://localhost:5000/plans')
+    .then(response => response.json())
+    .then(plans => {
+      const planList = document.getElementById('planList');
+      planList.innerHTML = '';  // Clear the list before rendering new plans
+
+      plans.forEach(plan => {
+        const listItem = document.createElement('li');
+        listItem.textContent = plan.text;
+        
+        // Create delete button for each plan
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.onclick = function() {
+          deletePlan(plan.id);
+        };
+        listItem.appendChild(deleteButton);
+        
+        planList.appendChild(listItem);
+      });
+    })
+    .catch(error => alert("Error loading plans: " + error));
+}
+
+// Delete plan function
+function deletePlan(planId) {
+  fetch(`http://localhost:5000/plans/${planId}`, {
+    method: 'DELETE'
+  })
+  .then(() => {
+    loadPlans(); // Re-render the list after deletion
+  })
+  .catch(error => alert("Error deleting plan: " + error));
+}
+</script>
+
+</body>
+</html>
